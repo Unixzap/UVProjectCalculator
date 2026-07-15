@@ -104,7 +104,7 @@ function initializePricingWorkspaceRecalculation(){
 
 
 const UVPC_APP_VERSION='1.0 RC1';
-const UVPC_BUILD_NUMBER='1022';
+const UVPC_BUILD_NUMBER='1023';
 const UVPC_SUPPORT_EMAIL='MrDon123@gmail.com';
 
 function getCurrentScreenName(){
@@ -737,24 +737,68 @@ function applyPricingProfitStatus(profit,actualMargin,targetMargin,totalCost,cus
 function populateProjectPrinterModal(){
  const family=$('#projectPrinterFamily'),edition=$('#projectPrinterEdition');
  if(!family||!edition)return;
- family.innerHTML=Object.entries(state.printerProfiles).map(([key,value])=>`<option value="${key}">${esc(value.name)}</option>`).join('');
- family.value=state.activePrinter.family;
+
+ const profiles=state.printerProfiles&&Object.keys(state.printerProfiles).length
+  ?state.printerProfiles
+  :defaults.printerProfiles;
+
+ family.innerHTML=Object.entries(profiles).map(([key,value])=>{
+  const label=value.family||value.name||key;
+  return `<option value="${key}">${esc(label)}</option>`;
+ }).join('');
+
+ const activeFamily=profiles[state.activePrinter.family]
+  ?state.activePrinter.family
+  :Object.keys(profiles)[0];
+
+ family.value=activeFamily;
+
  const refreshEditions=()=>{
-  const fam=state.printerProfiles[family.value];
-  edition.innerHTML=Object.entries(fam.editions).map(([key,value])=>`<option value="${key}">${esc(value.edition)}</option>`).join('');
-  edition.value=family.value===state.activePrinter.family&&fam.editions[state.activePrinter.edition]?state.activePrinter.edition:Object.keys(fam.editions)[0];
+  const fam=profiles[family.value]||profiles[Object.keys(profiles)[0]];
+  if(!fam||!fam.editions){
+   edition.innerHTML='<option value="">No editions available</option>';
+   edition.disabled=true;
+   return;
+  }
+
+  edition.disabled=false;
+  edition.innerHTML=Object.entries(fam.editions).map(([key,value])=>
+   `<option value="${key}">${esc(value.edition||value.name||key)}</option>`
+  ).join('');
+
+  const savedEdition=family.value===state.activePrinter.family
+   ?state.activePrinter.edition
+   :'';
+
+  edition.value=fam.editions[savedEdition]
+   ?savedEdition
+   :Object.keys(fam.editions)[0];
  };
+
  family.onchange=refreshEditions;
  refreshEditions();
 }
 function openProjectPrinterModal(){populateProjectPrinterModal();$('#projectPrinterModal').hidden=false}
 function applyProjectPrinterChange(){
- const family=$('#projectPrinterFamily').value,edition=$('#projectPrinterEdition').value;
- state.activePrinter.family=family;state.activePrinter.edition=edition;
- const profile=getActivePrinterProfile();state.activePrinter.workflow=profile.workflows[0];
- applyProfileRates(profile);loadRates();renderPrinterProfile();
- $('#projectPrinter').value=activePrinterLabel();calculate();renderDashboard();
- $('#projectPrinterModal').hidden=true;save(`Project printer changed to ${profile.name} ${profile.edition}`);
+ const family=$('#projectPrinterFamily').value;
+ const edition=$('#projectPrinterEdition').value;
+ const fam=state.printerProfiles[family];
+ if(!fam||!fam.editions||!fam.editions[edition]){
+  showToast('Please choose a valid printer family and edition.');
+  return;
+ }
+ state.activePrinter.family=family;
+ state.activePrinter.edition=edition;
+ const profile=getActivePrinterProfile();
+ state.activePrinter.workflow=profile.workflows[0];
+ applyProfileRates(profile);
+ loadRates();
+ renderPrinterProfile();
+ $('#projectPrinter').value=activePrinterLabel();
+ calculate();
+ renderDashboard();
+ $('#projectPrinterModal').hidden=true;
+ save(`Project printer changed to ${profile.name} ${profile.edition}`);
 }
 
 function getActivePrinterProfile(){const fam=state.printerProfiles[state.activePrinter.family]||state.printerProfiles['eufymake-e1'];return fam.editions[state.activePrinter.edition]||Object.values(fam.editions)[0]}

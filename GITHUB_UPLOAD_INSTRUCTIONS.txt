@@ -24,7 +24,17 @@ After upload:
 Do not send this ZIP to testers. Send only the hosted GitHub Pages URL.
 
 
-Build 1022 update:
+Build 1023 update:
 - Fixed the Help & Feedback Feature Request form so Prepare Email remains reachable on shorter screens.
-- Upload all Build 1022 files over the existing repository files and commit the changes.
+- Upload all Build 1023 files over the existing repository files and commit the changes.
 - After GitHub Pages finishes deploying, refresh the live site. A hard refresh may be needed because of browser caching.
+
+
+Build 1023 critical printer-selector fix:
+- Fixed Printer Family showing "undefined".
+- Restored EufyMake E1 and xTool O1 Omni family choices.
+- Printer Edition now repopulates when the family changes.
+- Invalid family/edition combinations cannot be applied.
+
+Upload every file over the existing GitHub repository files.
+After GitHub Pages redeploys, perform a hard refresh before testing.
